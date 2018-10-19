@@ -55,8 +55,14 @@ def main(param):
     nu = nu*rc/qc # viscosity
     kc = rho*qc**2/rc**4
     k = (a['k1']/kc, a['k2']*rc, a['k3']/kc) # elasticity model parameters (Eh/r)
-    out_args = [a['R1']*rc**4/(qc*rho), a['R2']*rc**4/(qc*rho), 
-            a['Ct']*rho*qc**2/rc**7] # Windkessel parameters
+    #out_args = [a['R1']*rc**4/(qc*rho), a['R2']*rc**4/(qc*rho), 
+    #        a['Ct']*rho*qc**2/rc**7] # Windkessel parameters - commented out from original
+    
+    #Windkessel parameters in iterable format
+    R1 = a['R1']*rc**4/(qc*rho)
+    R2 = a['R2']*rc**4/(qc*rho)
+    Ct = a['Ct']*rho*qc**2/rc**7
+    
     out_bc = '3wk'
     p0 = (85 * 1333.22365) * rc**4/(rho*qc**2) # zero transmural pressure
     
@@ -71,7 +77,8 @@ def main(param):
     an.initial_conditions(0.0)
     
     # run solver
-    an.solve(q_in, out_bc, out_args)
+    #an.solve(q_in, out_bc, out_args) #commented out from originial for iterables
+    an.solve(q_in,out_bc,R1,R2,Ct) #added to allow for iterable R1,R2,Ct. out_args became [R1,R2,Ct]
     
     # redimensionalise
     an.redimensionalise(rc, qc)

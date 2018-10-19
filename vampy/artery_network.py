@@ -506,14 +506,19 @@ time step size." % (t))
             artery.U[1,:,:] = artery.U[1,:,:] * qc
             
     
-    def solve(self, q_in, out_bc, out_args):
+    #def solve(self, q_in, out_bc, out_args): #commented out from original
+    def solve(self, q_in, out_bc, R1,R2,Ct): #added to allow iterable R1,R2,Ct
         """
         ArteryNetwork solver. Assigns boundary conditions to Artery object in the arterial tree and calls their solvers.
         
         :param q_in: Function for flux at the inlet.
         :param out_bc: Choice of outlet boundary conditions. '3wk' for windkessel, 'p' for constant pressure.
-        :param out_args: Iterable containing outlet boundary condition parameters.
+        :param out_args: Iterable containing outlet boundary condition parameters. - Removed by RLW
+        :param R1: Iterable containing first resistive element for outlet boundary condition parameter. - Added by RLW
+        :param R2: Iterable containing second resistive element for outlet boundary condition parameter. - Added by RLW
+        :param Ct: Iterable containing capacitive element for outlet boundary condition parameter. - Added by RLW
         """
+        
         tr = np.linspace(self.tf-self.T, self.tf, self.ntr)
         i = 0
         self.print_status()
@@ -551,6 +556,13 @@ time step size." % (t))
                     
                 if artery.pos >= (len(self.arteries) - 2**(self.depth-1)):
                     # outlet boundary condition
+                    if isinstance(R1, float) and isinstance(R2, float) and isinstance(Ct, float):
+                        out_args = R1, R2, Ct
+                    else:
+                        #Allows use of R1, R2, Ct in iterable format
+                        out_pos = artery.pos - (len(self.arteries) - 2**(self.depth-1)) #Position for each terminal vessel - added by RLW
+                        out_args = R1[out_pos], R2[out_pos], Ct[out_pos]
+                    
                     if out_bc == '3wk':
                         U_out = ArteryNetwork.outlet_wk3(artery, self.dt, *out_args)
                     elif out_bc == 'p':

@@ -65,7 +65,7 @@ before setting initial conditions.')
         self._nx = int(self.L/dx)+1
         if self.nx-1 != self.L/dx:
             self.L = dx * (self.nx-1)
-        X = np.linspace(0.0, self.L, self.nx)
+        X = np.linspace(0.0, self.L, self.nx)   
         R = self.Ru * np.power((self.Rd/self.Ru), X/self.L)
         self._A0 = np.power(R, 2)*np.pi
         self._f = 4/3 * (self.k[0] * np.exp(self.k[1]*R) + self.k[2])
@@ -74,7 +74,6 @@ before setting initial conditions.')
         self.U = np.zeros((2, ntr, self.nx))
         self.P = np.zeros((ntr, self.nx))
         self.U0 = np.zeros((2, self.nx))
-        
         
     def boundary_layer_thickness(self, nu, T):
         """
@@ -264,6 +263,7 @@ before setting initial conditions.')
         :param xi: Area.
         :returns: Solution to d^2B/dxdx_i
         """
+
         if l > self.L:
             x_0 = self.L-self.dx
             x_1 = self.L

@@ -2,6 +2,7 @@
 
 from __future__ import division
 import numpy as np
+import math as math
 
 from scipy import linalg
 
@@ -72,7 +73,7 @@ class ArteryNetwork(object):
             self.arteries[i] = Artery(i, Ru[i], Rd[i], lam[i], k, Re, p0)
         
         
-    def setup_arteries_ab(self, Ru, Rd, a, b, lam, k, Re):
+    def setup_arteries_ab(self, Ru, Rd, a, b, lam, k, Re, p0):
         """
         Creates Artery objects using scaling parameters.
         
@@ -83,6 +84,7 @@ class ArteryNetwork(object):
         :param lam: Iterable containing length-to-radius ratios.
         :param k: Iterable containing elasticity parameters.
         :param Re: Reynolds number.
+        :param p0: initial pressure
         :raises: ValueError
         """
         if type(Ru) == float:
@@ -149,6 +151,23 @@ class ArteryNetwork(object):
         for artery in self.arteries:
             artery.boundary_layer_thickness(self.nu, T)
             
+    def outflow_conditions(self, Rt, Ct,Tau):
+        """
+        New fxn created by RLW 11/01/18
+        Calculated R1,R2, Cp for each terminal vessel [1]
+        
+        [1] Qureshi, M.U., et al.(2018). Hemodynamic assessment of pulmonary hypertension in mice: a model-based analysis of the disease mechanism. Biomechanics and Modeling in Mechanobiology.
+        
+        :param Rt: Total resistance in the MPA
+        :param Ct: Total capacitance in the MPA
+        :param Tau: time constant RtCt which is fitted data to an exponential function [1]
+        """
+        J = 2**(self.depth -1) #Total number of terminal vessels
+        Rtj = J*Rt
+        R1j = 0.2*Rtj
+        R2j = Rtj - R1j
+        Cpj = Tau/Rtj    
+        return(R1j,R2j,Cpj)           
             
     def timestep(self):
         """
@@ -209,12 +228,21 @@ class ArteryNetwork(object):
                 gamma*(artery.S(U_np_mp, j=-2) + artery.S(U_np_mm, j=-2))
         k = 0
         X = dt/(R1*R2*Ct)
+        #print('In outlet for artery ', artery.pos, 'X = ', X)
         while k < 1000:
+            #print('k = ', k)
             p_old = p_new
+            #print('p_n =', p_n, 'q_n =', q_n, 'a_n =', a_n, 'p_old =', p_old)
             q_out = X*p_n - X*(R1+R2)*q_n + (p_old-p_n)/R1 + q_n
+            #print('q_out = ', q_out)
             a_out = a_n - theta * (q_out - U_mm[1])
+            #print('a_out = ', a_out)
+            if math.isnan(a_out) or math.isnan(q_out):
+                print('nan on k = ', k, 'for artery', artery.pos)
+                break
             p_new = artery.p(a_out, j=-1)
             if abs(p_old - p_new) < 1e-7:
+                #print('Condition met for outlet BC on k =',k)
                 break
             k += 1
         return np.array([a_out, q_out])
@@ -467,7 +495,8 @@ time step size." % (t))
         
     def get_daughters(self, parent):
         p = parent.pos
-        return self.arteries[p+1], self.arteries[p+2]
+        d = 2*p
+        return self.arteries[(d+1)], self.arteries[(d+2)]
         
         
     @staticmethod
@@ -525,8 +554,10 @@ time step size." % (t))
         self.timestep()
         bc_in = np.zeros((len(self.arteries), 2))
         while self.t < self.tf:
+        #for k in range(1,3,1):
+            #print('Time step, aka k = ', k, 't = ', self.t)
             save = False  
-            
+            #print(i)
             if i < self.ntr and (abs(tr[i]-self.t) < self.dtr or 
                                                 self.t >= self.tf-self.dt):
                 save = True
@@ -537,13 +568,14 @@ time step size." % (t))
                 gamma = self.dt/2
                 lw = LaxWendroff(theta, gamma, artery.nx)
                 
-                if self.depth > 1 and artery.pos < 2**self.depth-1 - 2:
+                if self.depth > 1 and artery.pos <= 2**(self.depth-1) - 2:
                     d1, d2 = self.get_daughters(artery)
                     x_out = ArteryNetwork.bifurcation(artery, d1, d2, self.dt)
                     U_out = np.array([x_out[9], x_out[0]])
-                    bc_in[d1.pos] = np.array([x_out[15], x_out[6]])
-                    bc_in[d2.pos] = np.array([x_out[12], x_out[3]])
-                
+                    #bc_in[d1.pos] = np.array([x_out[15], x_out[6]])
+                    #bc_in[d2.pos] = np.array([x_out[12], x_out[3]])
+                    bc_in[d2.pos] = np.array([x_out[15], x_out[6]])
+                    bc_in[d1.pos] = np.array([x_out[12], x_out[3]])                
                 if artery.pos == 0:
                     # inlet boundary condition
                     if self.T > 0:

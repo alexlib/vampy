@@ -29,6 +29,9 @@ def inlet(qc, rc, data_dir, f_inlet):
 def main(param):
     """
     Example main.py for running a VaMpy model of a bifurcation.
+    For scaling parameters a and b, see [1]
+    [1] M. S. Olufsen et. al. Numerical Simulation and Experimental Validation of Blood Flow in Arteries with Structured-Tree Outflow conditions. Ann. Biomed. Engr., 2000
+        
     """
     
     # read config file
@@ -59,26 +62,37 @@ def main(param):
     #        a['Ct']*rho*qc**2/rc**7] # Windkessel parameters - commented out from original
     
     #Windkessel parameters in iterable format
-    R1 = a['R1']*rc**4/(qc*rho)
-    R2 = a['R2']*rc**4/(qc*rho)
-    Ct = a['Ct']*rho*qc**2/rc**7
+    #R1 = a['R1']*rc**4/(qc*rho)
+    #R2 = a['R2']*rc**4/(qc*rho)
+    #Ct = a['Ct']*rho*qc**2/rc**7
+    Rt = a['Rt']
+    Ct = a['Ct']
+    Tau = a['Tau']
     
     out_bc = '3wk'
-    p0 = (85 * 1333.22365) * rc**4/(rho*qc**2) # zero transmural pressure
+    p0 = (10 * 1333.22365) * rc**4/(rho*qc**2) # zero transmural pressure
     
     # inlet boundary condition
     q_in = inlet(qc, rc, data_dir, f_inlet)
 
 
     # initialise artery network object
+    # Set scaling parameters a and b (see [1])
+    alpha = 0.9
+    beta = 0.6
+    #an = ArteryNetwork(Ru, Rd, a['lam'], k, rho, nu, p0, a['depth'], ntr, Re, a=alpha, b=beta)
     an = ArteryNetwork(Ru, Rd, a['lam'], k, rho, nu, p0, a['depth'], ntr, Re)
     an.mesh(dx)
     an.set_time(dt, T, tc)
     an.initial_conditions(0.0)
-    
+    [R1j,R2j,Cpj] = an.outflow_conditions(Rt,Ct,Tau) #new equation that solves for R1,R2,Ct given a total resistance
+    J = 2**(an.depth -1)
+    R1 = [(R1j*1333.22365)*rc**4/(qc*rho)]*J
+    R2 = [(R2j*1333.22365)*rc**4/(qc*rho)]*J
+    Cp = [(Cpj/1333.22365)*rho*qc**2/rc**7]*J
     # run solver
     #an.solve(q_in, out_bc, out_args) #commented out from originial for iterables
-    an.solve(q_in,out_bc,R1,R2,Ct) #added to allow for iterable R1,R2,Ct. out_args became [R1,R2,Ct]
+    an.solve(q_in,out_bc,R1,R2,Cp) #added to allow for iterable R1,R2,Ct. out_args became [R1,R2,Ct]
     
     # redimensionalise
     an.redimensionalise(rc, qc)

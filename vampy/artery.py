@@ -66,14 +66,14 @@ before setting initial conditions.')
         if self.nx-1 != self.L/dx:
             self.L = dx * (self.nx-1)
         X = np.linspace(0.0, self.L, self.nx)   
-        R = self.Ru * np.power((self.Rd/self.Ru), X/self.L)
-        self._A0 = np.power(R, 2)*np.pi
-        self._f = 4/3 * (self.k[0] * np.exp(self.k[1]*R) + self.k[2])
-        self._df = 4/3 * self.k[0] * self.k[1] * np.exp(self.k[1]*R)
+        self._R = self.Ru * np.power((self.Rd/self.Ru), X/self.L)
+        self._A0 = np.power(self.R, 2)*np.pi
+        self._f = 4/3 * (self.k[0] * np.exp(self.k[1]*self.R) + self.k[2])
+        self._df = 4/3 * self.k[0] * self.k[1] * np.exp(self.k[1]*self.R)
         self._xgrad = (self.Ru * np.log(self.Rd/self.Ru) * np.power((self.Rd/self.Ru), X/self.L))/self.L
         self.U = np.zeros((2, ntr, self.nx))
         self.P = np.zeros((ntr, self.nx))
-        self.U0 = np.zeros((2, self.nx))
+        self.U0 = np.zeros((2, self.nx))    
         
     def boundary_layer_thickness(self, nu, T):
         """
@@ -429,7 +429,7 @@ before setting initial conditions.')
         Number of spatial steps
         """
         return self._nx
-        
+    
     @property
     def Ru(self):
         """
@@ -443,7 +443,15 @@ before setting initial conditions.')
         Downstream radius
         """
         return self._Rd
-        
+    
+    @property
+    def R(self):
+        """
+        Radius gradient along length of artery
+        Added by RLW 12/22/18
+        """
+        return self._R
+    
     @property
     def k(self):
         """
@@ -510,6 +518,6 @@ before setting initial conditions.')
     @property
     def p0(self):
         """
-        Reynold's number
+        Initial pressure
         """
         return self._p0

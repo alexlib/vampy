@@ -89,12 +89,19 @@ class ArteryNetwork(object):
         """
         if type(Ru) == float:
             raise ValueError("Parameter depth has to be equal to 1 if only one artery is specified.")
-        pos = 0
-        self.arteries[pos] = Artery(pos, Ru, Rd, lam, k, Re, p0)
+        LAM = lam[0:len(Ru)]
+        self.setup_arteries(Ru, Rd, LAM, k, Re, p0)
+        pos = len(Ru)-1
+        #pos = 0
+        #self.arteries[pos] = Artery(pos, Ru, Rd, lam, k, Re, p0)
         pos += 1
-        radii_u = [Ru]
-        radii_d = [Rd]
-        for i in range(1,self.depth):
+        LAM = lam[pos]
+        radii_u = Ru[1:pos]
+        radii_d = Rd[1:pos]
+        #radii_u = [Ru]
+        #radii_d = [Rd]
+        start = int(math.log((len(Ru)+1),2))
+        for i in range(start,self.depth):
             new_radii_u = []
             new_radii_d = []
             for i in range(len(radii_u)):    
@@ -102,9 +109,9 @@ class ArteryNetwork(object):
                 rb_u = radii_u[i] * b
                 ra_d = radii_d[i] * a
                 rb_d = radii_d[i] * b
-                self.arteries[pos] = Artery(pos, ra_u, ra_d, lam, k, Re, p0)
+                self.arteries[pos] = Artery(pos, ra_u, ra_d, LAM, k, Re, p0)
                 pos += 1
-                self.arteries[pos] = Artery(pos, ra_u, ra_d, lam, k, Re, p0)
+                self.arteries[pos] = Artery(pos, rb_u, rb_d, LAM, k, Re, p0)
                 pos += 1
                 new_radii_u.append(ra_u)
                 new_radii_u.append(rb_u)
@@ -112,6 +119,7 @@ class ArteryNetwork(object):
                 new_radii_d.append(rb_d)
             radii_u = new_radii_u
             radii_d = new_radii_d
+        
             
             
     def initial_conditions(self, u0):
@@ -124,14 +132,26 @@ class ArteryNetwork(object):
             artery.initial_conditions(u0)            
             
             
-    def mesh(self, dx):
+    def mesh_dx(self, dx):
         """
-        Invokes mesh(nx) on each artery in the network
+        Invokes mesh(dx) on each artery in the network
         
         :param dx: Spatial step size
         """
         for artery in self.arteries:
             artery.mesh(dx, self.ntr)
+        
+    def mesh_nx(self, nx, rc):
+        """
+        Invokes mesh(dx) on each artery in the network
+        
+        :param nx: desired number of space steps
+        :param rc: characteristic radius
+        """
+        for artery in self.arteries:
+            dx = (artery.L/(nx-1))/rc
+            artery.mesh(dx, self.ntr)
+            print('dx for vessel:',artery.pos,dx)
             
             
     def set_time(self, dt, T, tc=1):
@@ -151,7 +171,7 @@ class ArteryNetwork(object):
         for artery in self.arteries:
             artery.boundary_layer_thickness(self.nu, T)
             
-    def outflow_conditions(self, Rt, Ct,Tau):
+    def outflow_conditions(self, Rt, Ct, Tau, mean_q):
         """
         New fxn created by RLW 11/01/18
         Calculated R1,R2, Cp for each terminal vessel [1]
@@ -161,12 +181,32 @@ class ArteryNetwork(object):
         :param Rt: Total resistance in the MPA
         :param Ct: Total capacitance in the MPA
         :param Tau: time constant RtCt which is fitted data to an exponential function [1]
+        :param mean_q: average flow taken from the inlet bc
         """
+        
+        mean_p = Rt*mean_q
         J = 2**(self.depth -1) #Total number of terminal vessels
-        Rtj = J*Rt
-        R1j = 0.2*Rtj
-        R2j = Rtj - R1j
-        Cpj = Tau/Rtj    
+        mu = self.nu*self.rho
+        Q = [0]*len(self.arteries)
+        Rtj = [0]*J
+        R1j = [0]*J
+        R2j = [0]*J
+        Cpj = [0]*J
+        Q[0] = mean_q
+        for artery in self.arteries:
+            if self.depth > 1 and artery.pos <= 2**(self.depth-1)-2:
+                p = artery.pos
+                d = 2*p
+                G_d1 = np.pi*np.power(self.arteries[d+1].Rd,4)/(8*mu*self.arteries[d+1].L)
+                G_d2 = np.pi*np.power(self.arteries[d+2].Rd,4)/(8*mu*self.arteries[d+2].L)
+                Q[d+1] = G_d1*Q[p]/(G_d1 + G_d2)
+                Q[d+2] = G_d2*Q[p]/(G_d1 + G_d2)
+            if artery.pos >= (len(self.arteries)-2**(self.depth -1)):
+                out_pos = artery.pos - (len(self.arteries)-2**(self.depth -1))
+                Rtj[out_pos] = mean_p/Q[artery.pos]
+                R1j[out_pos] = (0.2*Rtj[out_pos])
+                R2j[out_pos] = (Rtj[out_pos] - R1j[out_pos])
+                Cpj[out_pos] = (Tau/Rtj[out_pos])
         return(R1j,R2j,Cpj)           
             
     def timestep(self):
@@ -228,15 +268,11 @@ class ArteryNetwork(object):
                 gamma*(artery.S(U_np_mp, j=-2) + artery.S(U_np_mm, j=-2))
         k = 0
         X = dt/(R1*R2*Ct)
-        #print('In outlet for artery ', artery.pos, 'X = ', X)
+
         while k < 1000:
-            #print('k = ', k)
             p_old = p_new
-            #print('p_n =', p_n, 'q_n =', q_n, 'a_n =', a_n, 'p_old =', p_old)
             q_out = X*p_n - X*(R1+R2)*q_n + (p_old-p_n)/R1 + q_n
-            #print('q_out = ', q_out)
             a_out = a_n - theta * (q_out - U_mm[1])
-            #print('a_out = ', a_out)
             if math.isnan(a_out) or math.isnan(q_out):
                 print('nan on k = ', k, 'for artery', artery.pos)
                 break
@@ -464,8 +500,28 @@ class ArteryNetwork(object):
             k += 1
             np.copyto(x, x1)
         return x
-                
     
+    @staticmethod
+    def bifurcation_q(parent,d1,d2):
+        """
+        Fxn created by RLW 12/22/18
+        [1] Qureshi, M.U., et al.(2018). Hemodynamic assessment of pulmonary hypertension in mice: a model-based analysis of the disease mechanism. Biomechanics and Modeling in Mechanobiology.
+        
+        Calculates the bifucation boundary condition using method illustrated in [1]
+        
+        :param artery: Artery object of the parent vessel.
+        :param d1: Artery object of the first daughter vessel.
+        :param d2: Artery object of the second daughter vessel.
+        Returns: vector containing the solution at the bifurcation boundary (Q /A out for parent, Q/A in for d1 & d2)
+        """
+        qp = parent.U0[1,:]
+        mu = self.nu*self.rho
+        G_d1 = np.pi*np.power(d1.R,4)/(8*mu*d1.L)
+        G_d2 = np.pi*np.power(d2.R,4)/(8*mu*d2.L)
+        Q_d1 = G_d1*qp/(G_d1 + G_d2)
+        Q_d2 = G_d2*qp/(G_d1 + G_d2)
+        
+        
     @staticmethod
     def cfl_condition(artery, dt, t):
         """
@@ -479,11 +535,17 @@ class ArteryNetwork(object):
         :param dt: Time step size.
         """
         a = artery.U0[0,1]
+        #print('For artery:',artery.pos)
+        #print('a = ',a)
         c = artery.wave_speed(a)
         u = artery.U0[1,1] / a
+        #print('q = ',artery.U0[1,:])
         v = [u + c, u - c]
         left = dt/artery.dx
         right = 1/np.absolute(v)
+        sample_dx = (1e-6)/right
+        #print('u = ',u,'c = ',c)
+        #print('dx with dt = 1e-6 is:', sample_dx)
         try:
             cfl = False if (left > right).any() else True
         except ValueError:
@@ -594,7 +656,6 @@ time step size." % (t))
                         #Allows use of R1, R2, Ct in iterable format
                         out_pos = artery.pos - (len(self.arteries) - 2**(self.depth-1)) #Position for each terminal vessel - added by RLW
                         out_args = R1[out_pos], R2[out_pos], Ct[out_pos]
-                    
                     if out_bc == '3wk':
                         U_out = ArteryNetwork.outlet_wk3(artery, self.dt, *out_args)
                     elif out_bc == 'p':

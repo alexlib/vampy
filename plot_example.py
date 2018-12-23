@@ -32,12 +32,19 @@ def main(param):
     T = s['T']
     tc = s['tc']
     tf = T*tc
+    Ru = a['Ru']
+    depth = a['depth']
+    
     
     if not exists("%s/%s" % (plot_dir, suffix)):
         makedirs("%s/%s" % (plot_dir, suffix))
     
-   #pos = 0
-    for pos in range(0,7,1):
+    #pos = 0
+    if depth == 1:
+       length = 1
+    else:
+       length = len(Ru)
+    for pos in range(0,length,1):
         
         if type(a['Ru']) is float:
             L = a['Ru']*a['lam']

@@ -14,7 +14,7 @@ import numpy as np
 from scipy.interpolate import interp1d
 
 from vampy import *
-
+import time
 
 def inlet(qc, rc, data_dir, f_inlet):
     """
@@ -33,7 +33,7 @@ def main(param):
     [1] M. S. Olufsen et. al. Numerical Simulation and Experimental Validation of Blood Flow in Arteries with Structured-Tree Outflow conditions. Ann. Biomed. Engr., 2000
         
     """
-    
+    start = time.clock()
     # read config file
     f, a, s = utils.read_config(param) 
     
@@ -78,8 +78,8 @@ def main(param):
     # Set scaling parameters a and b (see [1])
     alpha = 0.9
     beta = 0.6
-    an = ArteryNetwork(Ru, Rd, a['lam'], k, rho, nu, p0, a['depth'], ntr, Re, a=alpha, b=beta)
-    #an = ArteryNetwork(Ru, Rd, a['lam'], k, rho, nu, p0, a['depth'], ntr, Re)
+    #an = ArteryNetwork(Ru, Rd, a['lam'], k, rho, nu, p0, a['depth'], ntr, Re, a=alpha, b=beta)
+    an = ArteryNetwork(Ru, Rd, a['lam'], k, rho, nu, p0, a['depth'], ntr, Re)
     an.mesh_dx(dx)
     #an.mesh_nx(N, rc)
 
@@ -87,14 +87,15 @@ def main(param):
     an.initial_conditions(0.0)
     # run solver
     #an.solve(q_in, out_bc, out_args) #commented out from originial for iterables
+    print('before solve:', (time.clock()-start),'sec')
     an.solve(q_in,out_bc,R1,R2,Ct) #added to allow for iterable R1,R2,Ct. out_args became [R1,R2,Ct]
-    
+    print('Afer solve:',(time.clock()-start),'sec')
     # redimensionalise
     an.redimensionalise(rc, qc)
     
     # save results
     an.dump_results(run_id, f['data_dir'])
-        
+       
     
 if __name__ == "__main__":
     script, param = sys.argv

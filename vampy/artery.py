@@ -11,7 +11,7 @@ import vampy.utils as utils
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import cm
 from scipy.interpolate import interp1d
-
+import time
 
 class Artery(object):
     """
@@ -30,6 +30,7 @@ class Artery(object):
         """
         Artery constructor.
         """
+        start_time = time.clock()
         self._pos = pos
         self._Ru = Ru
         self._Rd = Rd
@@ -37,6 +38,10 @@ class Artery(object):
         self._k = k
         self._Re = Re
         self._p0 = p0
+        #self.Time = np.empty((0,3),int)
+        self.Time = []
+        self.Time.append([self.pos, start_time, start_time])
+        #self._term = term
         
         
     def initial_conditions(self, u0):
@@ -55,7 +60,7 @@ before setting initial conditions.')
         self.U0[1,:].fill(u0)
         
         
-    def mesh(self, dx, ntr):
+    def mesh(self, dx, ntr, **kwargs):
         """
         Meshes an artery using spatial step size dx.
         
@@ -68,8 +73,16 @@ before setting initial conditions.')
         X = np.linspace(0.0, self.L, self.nx)   
         self._R = self.Ru * np.power((self.Rd/self.Ru), X/self.L)
         self._A0 = np.power(self.R, 2)*np.pi
-        self._f = 4/3 * (self.k[0] * np.exp(self.k[1]*self.R) + self.k[2])
+        
+        if 'Eh' in kwargs:
+            Eh_temp = kwargs['Eh']
+            self._f = np.array([4/3*Eh_temp]*self.R.size) #Added to allow change in Eh for specific artery RLW 4/30
+        else:
+            self._f = 4/3 * (self.k[0] * np.exp(self.k[1]*self.R) + self.k[2])
+        #print(type(self.f))
+        #print('f = ', self.f)
         self._df = 4/3 * self.k[0] * self.k[1] * np.exp(self.k[1]*self.R)
+        #print('df = ', self.df)
         self._xgrad = (self.Ru * np.log(self.Rd/self.Ru) * np.power((self.Rd/self.Ru), X/self.L))/self.L
         self.U = np.zeros((2, ntr, self.nx))
         self.P = np.zeros((ntr, self.nx))
@@ -409,7 +422,9 @@ before setting initial conditions.')
         np.savetxt("%s/%s/a%d_%s.csv" % (data_dir, suffix, self.pos, suffix),
                    self.U[0,:,:], delimiter=',')  
         np.savetxt("%s/%s/p%d_%s.csv" % (data_dir, suffix, self.pos, suffix),
-                   self.P, delimiter=',') 
+                   self.P, delimiter=',')
+        np.savetxt("%s/%s/time%d_%s.csv" % (data_dir, suffix, self.pos, suffix),
+                   self.Time, delimiter=',') 
                    
                    
     @property
@@ -521,3 +536,12 @@ before setting initial conditions.')
         Initial pressure
         """
         return self._p0
+    
+    @property
+    def term(self):
+        """
+        Whether or not the vessel is terminal or not.
+        term = 'Y' or 'N'. If term == 'Y' then will also have a terminal 
+        vessel index separate from other indexing for outflow BCs 
+        """
+        return self._term

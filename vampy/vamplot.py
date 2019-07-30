@@ -30,7 +30,7 @@ def p3d_plot(fig_dims, time, P, L, pos, suffix='', plot_dir=''):
     surf = ax.plot_surface(X, Y, Z, rstride=1, cstride=1, cmap=cm.viridis,
                   linewidth=0, antialiased=False)
     ax.set_xlabel('t (s)')
-    ax.set_ylabel('z (cm)')
+    ax.set_ylabel('x (cm)')
     ax.set_zlabel('pressure (mmHg)')
     ax.set_xlim([min(time), max(time)])
     ax.set_ylim([min(x), max(x)])
@@ -54,11 +54,16 @@ def q3d_plot(fig_dims, time, U, L, pos, suffix='', plot_dir=''):
     surf = ax.plot_surface(X, Y, Z, rstride=1, cstride=1, cmap=cm.viridis,
                   linewidth=0, antialiased=False)
     ax.set_xlabel('t (s)')
-    ax.set_ylabel('z (cm)')
+    ax.set_ylabel('x (cm)')
     ax.set_zlabel('flow rate (cm^3/s)')
     ax.set_xlim([min(time), max(time)])
     ax.set_ylim([min(x), max(x)])
+    ax.set_zlim([0, 0.6])
     fig.colorbar(surf, shrink=0.5, aspect=5)
+    surf.set_clim(0, 0.6)
+    #cbar.Normalize(clip = False)
+    #cbar.boundaries(0,0.6)
+    
     if plot_dir == '':
         fig.show()
     else:

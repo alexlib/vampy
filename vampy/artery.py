@@ -30,7 +30,7 @@ class Artery(object):
         """
         Artery constructor.
         """
-        start_time = time.clock()
+        start_time = time.time()
         self._pos = pos
         self._Ru = Ru
         self._Rd = Rd

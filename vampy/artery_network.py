@@ -609,7 +609,7 @@ time step size." % (t))
     
     #def solve(self, q_in, out_bc, out_args): #commented out from original
     def solve(self, q_in, out_bc, R1,R2,Ct): #added to allow iterable R1,R2,Ct
-        start_time = time.clock() #Added by RLW to allow tracking
+        start_time = time.time() #Added by RLW to allow tracking
         #print('Start time:',start_time)
         """
         ArteryNetwork solver. Assigns boundary conditions to Artery object in the arterial tree and calls their solvers.
@@ -635,7 +635,7 @@ time step size." % (t))
                 i += 1
                 
             for artery in self.arteries:
-                #artery_start = time.clock()
+                #artery_start = time.time()
                 theta = self.dt/artery.dx
                 gamma = self.dt/2
                 lw = LaxWendroff(theta, gamma, artery.nx)
@@ -643,12 +643,12 @@ time step size." % (t))
                 if self.depth > 1 and artery.pos <= 2**(self.depth-1) - 2:
                     d1, d2 = self.get_daughters(artery)
                     if i == 1 and (abs(tr[i]-self.t) < self.dtr or self.t >= self.tf-self.dt):
-                        before = time.clock()
-                    artery_start = time.clock()
+                        before = time.time()
+                    artery_start = time.time()
                     x_out = ArteryNetwork.bifurcation(artery, d1, d2, self.dt)
-                    artery.Time.append([i, artery_start, (time.clock()-artery_start)])
+                    artery.Time.append([i, artery_start, (time.time()-artery_start)])
                     if i == 1 and (abs(tr[i]-self.t) < self.dtr or self.t >= self.tf-self.dt):
-                        print('After bifurcation:',(time.clock()-before),'sec')
+                        print('After bifurcation:',(time.time()-before),'sec')
                     U_out = np.array([x_out[9], x_out[0]])
                     #bc_in[d1.pos] = np.array([x_out[15], x_out[6]])
                     #bc_in[d2.pos] = np.array([x_out[12], x_out[3]]) #Should be for d1 daughter vessel so were swapped by RLW
@@ -663,8 +663,8 @@ time step size." % (t))
                     U_in = ArteryNetwork.inlet_bc(artery, q_in, in_t, self.dt)
                 else:
                     U_in = bc_in[artery.pos]
-                #print('Bifurcation calculation for artery',artery.pos,(time.clock() - artery_start))
-                #artery.Time.append([i, artery_start, (time.clock()-artery_start)]) #Added by RLW to track bc time
+                #print('Bifurcation calculation for artery',artery.pos,(time.time() - artery_start))
+                #artery.Time.append([i, artery_start, (time.time()-artery_start)]) #Added by RLW to track bc time
                 if artery.pos >= (len(self.arteries) - 2**(self.depth-1)):
                     # outlet boundary condition
                     if isinstance(R1, float) and isinstance(R2, float) and isinstance(Ct, float):
@@ -689,7 +689,7 @@ time step size." % (self.t))
             self.timestep()
             self.print_status()
         for artery in self.arteries:
-            artery.Time.append([np.nan, (time.clock()-start_time),time.clock()])
+            artery.Time.append([np.nan, (time.time()-start_time),time.time()])
                 
             
     def dump_results(self, suffix, data_dir):

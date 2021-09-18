@@ -33,7 +33,7 @@ def main(param):
     [1] M. S. Olufsen et. al. Numerical Simulation and Experimental Validation of Blood Flow in Arteries with Structured-Tree Outflow conditions. Ann. Biomed. Engr., 2000
         
     """
-    start = time.clock()
+    start = time.time()
     # read config file
     f, a, s = utils.read_config(param) 
     
@@ -87,9 +87,9 @@ def main(param):
     an.initial_conditions(0.0)
     # run solver
     #an.solve(q_in, out_bc, out_args) #commented out from originial for iterables
-    print('before solve:', (time.clock()-start),'sec')
+    print('before solve:', (time.time()-start),'sec')
     an.solve(q_in,out_bc,R1,R2,Ct) #added to allow for iterable R1,R2,Ct. out_args became [R1,R2,Ct]
-    print('Afer solve:',(time.clock()-start),'sec')
+    print('Afer solve:',(time.time()-start),'sec')
     # redimensionalise
     an.redimensionalise(rc, qc)
     

@@ -19,8 +19,8 @@ plt.rcParams['font.serif'] = ['Arial']
 
 
 def p3d_plot(fig_dims, time, P, L, pos, suffix='', plot_dir=''):
-    fig = plt.figure(figsize=fig_dims)
-    ax = fig.gca(projection='3d')
+    fig,ax = plt.subplots(figsize=fig_dims,)
+    ax = plt.axes(projection='3d')
     nt = len(time)
     x = np.linspace(0, L, nt)
     Y, X = np.meshgrid(x, time)
@@ -44,7 +44,7 @@ def p3d_plot(fig_dims, time, P, L, pos, suffix='', plot_dir=''):
     
 def q3d_plot(fig_dims, time, U, L, pos, suffix='', plot_dir=''):
     fig = plt.figure(figsize=fig_dims)
-    ax = fig.gca(projection='3d')
+    ax = plt.axes(projection='3d')
     nt = len(time)
     x = np.linspace(0, L, nt)
     Y, X = np.meshgrid(x, time)

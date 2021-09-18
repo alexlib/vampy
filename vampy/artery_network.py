@@ -88,8 +88,9 @@ class ArteryNetwork(object):
         :param p0: initial pressure
         :raises: ValueError
         """
-        if type(Ru) == float:
+        if not isinstance(Ru, list) or len(Ru) == 0:
             raise ValueError("Parameter depth has to be equal to 1 if only one artery is specified.")
+                        
         LAM = lam[0:len(Ru)]
         self.setup_arteries(Ru, Rd, LAM, k, Re, p0)
         pos = len(Ru)-1

@@ -11,7 +11,7 @@ def equal(a, b):
 
 
 def setup_config():
-    config = ConfigParser.SafeConfigParser()
+    config = ConfigParser()
     config.optionxform = str 
     config.read("test_param.cfg")
     return config

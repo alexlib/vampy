@@ -31,7 +31,7 @@ def parameter():
 
 def test_artery_init():
     pos, Ru, Rd, lam, k, Re, nu, T = parameter()
-    artery = Artery(pos, Ru, Rd, lam, k, Re)
+    artery = Artery(pos, Ru, Rd, lam, k, Re, 0)
     assert artery.pos == pos
     assert artery.Ru == Ru
     assert artery.Rd == Rd
@@ -42,7 +42,7 @@ def test_artery_init():
     
 def test_initial_conditions():
     pos, Ru, Rd, lam, k, Re, nu, T = parameter()
-    artery = Artery(pos, Ru, Rd, lam, k, Re)
+    artery = Artery(pos, Ru, Rd, lam, k, Re, 0)
     artery.mesh(10, 10)
     u0 = 0.5
     artery.initial_conditions(u0)
@@ -52,7 +52,7 @@ def test_initial_conditions():
     
 def test_mesh():
     pos, Ru, Rd, lam, k, Re, nu, T = parameter()
-    artery = Artery(pos, Ru, Rd, lam, k, Re)
+    artery = Artery(pos, Ru, Rd, lam, k, Re, 0)
     nx = 10    
     l = np.linspace(0, Ru*lam, nx)
     dx = l[1] - l[0]
@@ -69,7 +69,7 @@ def test_mesh():
     
 def test_boundary_layer_thickness():
     pos, Ru, Rd, lam, k, Re, nu, T = parameter()
-    artery = Artery(pos, Ru, Rd, lam, k, Re)
+    artery = Artery(pos, Ru, Rd, lam, k, Re, 0)
     blt = np.sqrt(nu*T/(2*np.pi))
     artery.boundary_layer_thickness(nu, T)
     assert blt == artery.delta
@@ -77,7 +77,7 @@ def test_boundary_layer_thickness():
     
 def test_p():
     pos, Ru, Rd, lam, k, Re, nu, T = parameter()
-    artery = Artery(pos, Ru, Rd, lam, k, Re)
+    artery = Artery(pos, Ru, Rd, lam, k, Re, 0)
     artery.mesh(0.1, 20)
     p0 = artery.f[0] * (1 - np.sqrt(artery.A0[0]/artery.A0[0]))
     p = artery.f * (1 - np.sqrt(artery.A0/artery.A0))
@@ -87,7 +87,7 @@ def test_p():
                 
 def test_wave_speed():
     pos, Ru, Rd, lam, k, Re, nu, T = parameter()
-    artery = Artery(pos, Ru, Rd, lam, k, Re)
+    artery = Artery(pos, Ru, Rd, lam, k, Re, 0)
     artery.mesh(0.1, 20)
     c = -np.sqrt(0.5 * artery.f * np.sqrt(artery.A0/artery.A0))
     assert (c == artery.wave_speed(artery.A0)).all()
@@ -95,7 +95,7 @@ def test_wave_speed():
                 
 def test_F():
     pos, Ru, Rd, lam, k, Re, nu, T = parameter()
-    artery = Artery(pos, Ru, Rd, lam, k, Re)
+    artery = Artery(pos, Ru, Rd, lam, k, Re, 0)
     artery.mesh(0.1, 20)
     artery.initial_conditions(0.43)
     j = 0
@@ -107,7 +107,7 @@ def test_F():
     
 def test_S():
     pos, Ru, Rd, lam, k, Re, nu, T = parameter()
-    artery = Artery(pos, Ru, Rd, lam, k, Re)
+    artery = Artery(pos, Ru, Rd, lam, k, Re, 0 )
     artery.mesh(0.1, 20)
     artery.initial_conditions(0.43)
     artery.boundary_layer_thickness(nu, T)
@@ -127,7 +127,7 @@ def test_S():
     
 def test_dBdx():
     pos, Ru, Rd, lam, k, Re, nu, T = parameter()
-    artery = Artery(pos, Ru, Rd, lam, k, Re)
+    artery = Artery(pos, Ru, Rd, lam, k, Re, 0)
     artery.mesh(0.1, 20)
     artery.initial_conditions(0.43)
     artery.boundary_layer_thickness(nu, T)
@@ -140,7 +140,7 @@ def test_dBdx():
                     
 def test_dBdxi():
     pos, Ru, Rd, lam, k, Re, nu, T = parameter()
-    artery = Artery(pos, Ru, Rd, lam, k, Re)
+    artery = Artery(pos, Ru, Rd, lam, k, Re, 0)
     artery.mesh(0.1, 20)
     artery.initial_conditions(0.43)
     artery.boundary_layer_thickness(nu, T)
@@ -151,7 +151,7 @@ def test_dBdxi():
     
 def test_dBdxdxi():
     pos, Ru, Rd, lam, k, Re, nu, T = parameter()
-    artery = Artery(pos, Ru, Rd, lam, k, Re)
+    artery = Artery(pos, Ru, Rd, lam, k, Re, 0)
     artery.mesh(0.1, 20)
     artery.initial_conditions(0.43)
     artery.boundary_layer_thickness(nu, T)
@@ -164,7 +164,7 @@ def test_dBdxdxi():
                     
 def test_dFdxi2():
     pos, Ru, Rd, lam, k, Re, nu, T = parameter()
-    artery = Artery(pos, Ru, Rd, lam, k, Re)
+    artery = Artery(pos, Ru, Rd, lam, k, Re, 0)
     artery.mesh(0.1, 20)
     artery.initial_conditions(0.43)
     artery.boundary_layer_thickness(nu, T)
@@ -176,7 +176,7 @@ def test_dFdxi2():
     
 def test_dFdxi1():
     pos, Ru, Rd, lam, k, Re, nu, T = parameter()
-    artery = Artery(pos, Ru, Rd, lam, k, Re)
+    artery = Artery(pos, Ru, Rd, lam, k, Re, 0)
     artery.mesh(0.1, 20)
     artery.initial_conditions(0.43)
     artery.boundary_layer_thickness(nu, T)
@@ -188,7 +188,7 @@ def test_dFdxi1():
     
 def test_dpdx():
     pos, Ru, Rd, lam, k, Re, nu, T = parameter()
-    artery = Artery(pos, Ru, Rd, lam, k, Re)
+    artery = Artery(pos, Ru, Rd, lam, k, Re, 0)
     artery.mesh(0.1, 20)
     artery.initial_conditions(0.43)
     artery.boundary_layer_thickness(nu, T)
@@ -199,7 +199,7 @@ def test_dpdx():
 
 def test_solve():
     pos, Ru, Rd, lam, k, Re, nu, T = parameter()
-    artery = Artery(pos, Ru, Rd, lam, k, Re)
+    artery = Artery(pos, Ru, Rd, lam, k, Re, 0)
     dt = 0.0001
     dx = 0.1
     artery.mesh(dx, 20)

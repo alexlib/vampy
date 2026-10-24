@@ -6,3 +6,4 @@ docs/build
 tests/__pycache__/
 .cache
 *.pyc
+uv.lock
